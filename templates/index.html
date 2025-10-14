@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yan AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0b0c10;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #1f2833;
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #66fcf1;
+        }
+        .chat-container {
+            padding: 20px;
+            height: 80vh;
+            overflow-y: auto;
+        }
+        .user, .ai {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+        .user {
+            background-color: #45a29e;
+            align-self: flex-end;
+            text-align: right;
+            margin-left: auto;
+        }
+        .ai {
+            background-color: #1f2833;
+            color: #66fcf1;
+            align-self: flex-start;
+        }
+        .input-container {
+            display: flex;
+            padding: 10px;
+            background-color: #1f2833;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+            font-size: 16px;
+        }
+        button {
+            margin-left: 5px;
+            padding: 10px 15px;
+            background-color: #66fcf1;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <header>Yan AI — by Adrian 🤖</header>
+
+    <div class="chat-container" id="chat"></div>
+
+    <div class="input-container">
+        <input id="question" type="text" placeholder="Tulis pesan..." onkeypress="if(event.key==='Enter') send()">
+        <button onclick="send()">Kirim</button>
+    </div>
+
+    <script>
+        async function send() {
+            const q = document.getElementById("question").value.trim();
+            if (!q) return;
+            const chat = document.getElementById("chat");
+            chat.innerHTML += `<div class='user'><b>Kamu:</b> ${q}</div>`;
+            document.getElementById("question").value = "";
+            chat.scrollTop = chat.scrollHeight;
+
+            const res = await fetch("/ask", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ question: q })
+            });
+            const data = await res.json();
+            chat.innerHTML += `<div class='ai'><b>Yan AI:</b> ${data.answer}</div>`;
+            chat.scrollTop = chat.scrollHeight;
+        }
+    </script>
+</body>
+</html>
