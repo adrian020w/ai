@@ -1,15 +1,28 @@
 #!/bin/bash
-echo "Menjalankan Yan AI by Adrian..."
+# start.sh : aktifkan venv lalu jalankan app.py, kemudian buat tunnel serveo
+set -e
 
-# Jalankan Flask di background
+# pastikan berada di folder ~ /ai
+cd "$(dirname "$0")"
+
+# aktifkan venv jika ada
+if [ -f "venv/bin/activate" ]; then
+  echo "[INFO] activating venv"
+  source venv/bin/activate
+else
+  echo "[WARN] venv not found. Create one with: python -m venv venv"
+fi
+
+# jalankan flask di background
+echo "[INFO] starting flask app"
 python app.py &
+
 FLASK_PID=$!
+sleep 2
 
-# Jalankan Serveo untuk akses publik
-ssh -R 80:localhost:5000 serveo.net &
-SERVEO_PID=$!
+echo "[INFO] starting serveo (ssh -R 80:localhost:5000 serveo.net)"
+# Jika kamu ingin subdomain tertentu, gunakan -R 80:localhost:5000:subdomain=namamu
+ssh -o ServerAliveInterval=60 -R 80:localhost:5000 serveo.net
 
-trap "echo 'Menutup Yan AI...'; kill $FLASK_PID $SERVEO_PID" INT
-
-wait
-echo "Yan AI telah ditutup."
+# jika serveo exit, hentikan flask
+kill $FLASK_PID || true
