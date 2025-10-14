@@ -1,28 +1,25 @@
 #!/bin/bash
-# start.sh : aktifkan venv lalu jalankan app.py, kemudian buat tunnel serveo
-set -e
+echo "🚀 Menyiapkan lingkungan AI Chat..."
 
-# pastikan berada di folder ~ /ai
-cd "$(dirname "$0")"
+# Update sistem
+sudo apt update -y
+sudo apt install -y python3 python3-pip git openssh
 
-# aktifkan venv jika ada
-if [ -f "venv/bin/activate" ]; then
-  echo "[INFO] activating venv"
-  source venv/bin/activate
-else
-  echo "[WARN] venv not found. Create one with: python -m venv venv"
+# Buat virtual env jika belum ada
+if [ ! -d "ai_env" ]; then
+  python3 -m venv ai_env
 fi
+source ai_env/bin/activate
 
-# jalankan flask di background
-echo "[INFO] starting flask app"
-python app.py &
+# Install library
+echo "📚 Menginstal library Python..."
+pip install --upgrade pip
+pip install flask transformers torch sentencepiece
 
-FLASK_PID=$!
-sleep 2
+# Jalankan Flask di background
+echo "🧠 Menjalankan server Flask..."
+nohup python3 app.py > log.txt 2>&1 &
 
-echo "[INFO] starting serveo (ssh -R 80:localhost:5000 serveo.net)"
-# Jika kamu ingin subdomain tertentu, gunakan -R 80:localhost:5000:subdomain=namamu
-ssh -o ServerAliveInterval=60 -R 80:localhost:5000 serveo.net
-
-# jika serveo exit, hentikan flask
-kill $FLASK_PID || true
+# Jalankan Serveo
+echo "🌐 Membuka port publik..."
+ssh -o StrictHostKeyChecking=no -R 80:localhost:5000 serveo.net
