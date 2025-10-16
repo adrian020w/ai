@@ -1,15 +1,19 @@
-CLOUD=$(find $HOME -maxdepth 4 -type f -iname 'cloudflared*' 2>/dev/null | head -n1)
-TID=$($CLOUD tunnel list --output json 2>/dev/null | grep -oP '"id":"\K[^"]+' | head -n1)
-if [ -z "$TID" ]; then TID=$($CLOUD tunnel list 2>/dev/null | awk '/orionai/ {print $1; exit}'); fi
-mkdir -p ~/.cloudflared
-cat > ~/ai/config.yml <<YML
+# simpan TUNNEL_ID ke variabel
+TID="d4153116-9a7e-4f91-a06c-b5aac97809ba"
+
+# buat folder config jika belum ada
+mkdir -p /root/.cloudflared
+
+# buat config.yml
+cat > /root/cloudflare/config.yml <<YML
 tunnel: $TID
-credentials-file: $HOME/.cloudflared/$TID.json
+credentials-file: /root/.cloudflared/$TID.json
 
 ingress:
   - hostname: orionai.trycloudflare.com
     service: http://localhost:5000
   - service: http_status:404
 YML
-echo "config.yml dibuat dengan TUNNEL_ID = $TID"
-ls -l ~/.cloudflared/$TID.json || echo "⚠️ Periksa: file kredensial belum ada di ~/.cloudflared/"
+
+# cek apakah file JSON tunnel ada
+ls -l /root/.cloudflared/
