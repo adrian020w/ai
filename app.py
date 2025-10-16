@@ -311,6 +311,11 @@ audio {
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
+  body {
+    height: 100vh;
+    height: 100dvh;
+  }
+
   .sidebar {
     width: 260px;
     left: -260px;
@@ -323,10 +328,13 @@ audio {
   .chat-container {
     margin-left: 0;
     width: 100%;
+    height: 100vh;
+    height: 100dvh;
   }
 
   .chat-box {
     padding: 12px;
+    padding-bottom: 80px;
   }
 
   .msg {
@@ -336,7 +344,14 @@ audio {
   }
 
   form {
-    padding: 12px;
+    padding: 10px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(30, 41, 59, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   textarea {
