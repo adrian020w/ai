@@ -2,34 +2,30 @@
 echo "🚀 Menyiapkan lingkungan AI Chat Adrian..."
 
 # === Update & Install Paket ===
-echo "📦 Memperbarui paket..."
+echo "📦 Memperbarui paket & menginstal dependency..."
 pkg update -y && pkg upgrade -y
 pkg install -y python openssh git
 
 # === Install Library Python ===
 echo "📚 Menginstal library Python..."
 pip install --upgrade pip
-pip install flask google-genai
+pip install flask requests
 
-# === Jalankan Flask Server ===
+# === Hentikan proses Flask sebelumnya jika ada ===
+echo "🛑 Menghentikan server Flask lama jika ada..."
+pkill -f "python app.py" 2>/dev/null || echo "✅ Tidak ada server lama yang berjalan"
+
+# === Jalankan Flask Server di background ===
 echo "🧠 Menjalankan server Flask di background..."
-
-# Hentikan proses Flask sebelumnya jika masih berjalan
-pkill -f "python app.py" 2>/dev/null
-
-# Jalankan ulang Flask server di background
 nohup python app.py > log.txt 2>&1 &
-
-# Tunggu agar server siap
 sleep 3
+echo "✅ Flask server berjalan di background. Log disimpan di log.txt"
 
-# === Jalankan Serveo ===
-# Ganti 'aiadrian' di bawah dengan subdomain Serveo yang kamu mau, misal 'adrianai'
+# === Jalankan Serveo untuk akses publik ===
 SUBDOMAIN="aiadrian"
-
 echo "🌐 Membuka akses publik melalui Serveo..."
-echo "Gunakan link di bawah ini untuk mengakses web AI kamu:"
-echo "➡️  https://$SUBDOMAIN.serveo.net"
+echo "➡️  Link publik: https://$SUBDOMAIN.serveo.net"
 
-# Jalankan Serveo dan arahkan ke port Flask
-ssh -o StrictHostKeyChecking=no -R $SUBDOMAIN:80:localhost:5000 serveo.net
+# Jalankan koneksi Serveo
+# -R = remote forwarding, StrictHostKeyChecking=no agar tidak tanya fingerprint
+ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R $SUBDOMAIN:80:localhost:5000 serveo.net
