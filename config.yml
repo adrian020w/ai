@@ -1,14 +1,7 @@
-CLOUD="/data/data/com.termux/files/home/.cffolder/cloudflared"
-
-# ambil TUNNEL_ID (JSON + fallback)
+CLOUD=$(find $HOME -maxdepth 4 -type f -iname 'cloudflared*' 2>/dev/null | head -n1)
 TID=$($CLOUD tunnel list --output json 2>/dev/null | grep -oP '"id":"\K[^"]+' | head -n1)
-if [ -z "$TID" ]; then
-  TID=$($CLOUD tunnel list 2>/dev/null | awk '/orionai/ {print $1; exit}')
-fi
-
-echo "Tunnel ID terdeteksi: $TID"
+if [ -z "$TID" ]; then TID=$($CLOUD tunnel list 2>/dev/null | awk '/orionai/ {print $1; exit}'); fi
 mkdir -p ~/.cloudflared
-
 cat > ~/ai/config.yml <<YML
 tunnel: $TID
 credentials-file: $HOME/.cloudflared/$TID.json
@@ -18,6 +11,5 @@ ingress:
     service: http://localhost:5000
   - service: http_status:404
 YML
-
-echo "config.yml dibuat di ~/ai/config.yml"
-ls -l ~/.cloudflared/$TID.json || echo "⚠️ Periksa: kredensial mungkin belum ada di ~/.cloudflared/"
+echo "config.yml dibuat dengan TUNNEL_ID = $TID"
+ls -l ~/.cloudflared/$TID.json || echo "⚠️ Periksa: file kredensial belum ada di ~/.cloudflared/"
