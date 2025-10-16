@@ -1,7 +1,23 @@
-tunnel: <TUNNEL_ID>                # Ganti <TUNNEL_ID> dengan Tunnel ID yang kamu dapat
-credentials-file: ~/.cloudflared/<TUNNEL_ID>.json
+CLOUD="/data/data/com.termux/files/home/.cffolder/cloudflared"
+
+# ambil TUNNEL_ID (JSON + fallback)
+TID=$($CLOUD tunnel list --output json 2>/dev/null | grep -oP '"id":"\K[^"]+' | head -n1)
+if [ -z "$TID" ]; then
+  TID=$($CLOUD tunnel list 2>/dev/null | awk '/orionai/ {print $1; exit}')
+fi
+
+echo "Tunnel ID terdeteksi: $TID"
+mkdir -p ~/.cloudflared
+
+cat > ~/ai/config.yml <<YML
+tunnel: $TID
+credentials-file: $HOME/.cloudflared/$TID.json
 
 ingress:
   - hostname: orionai.trycloudflare.com
     service: http://localhost:5000
   - service: http_status:404
+YML
+
+echo "config.yml dibuat di ~/ai/config.yml"
+ls -l ~/.cloudflared/$TID.json || echo "⚠️ Periksa: kredensial mungkin belum ada di ~/.cloudflared/"
