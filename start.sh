@@ -4,7 +4,7 @@ echo "🚀 Menyiapkan lingkungan AI Chat Adrian..."
 # === Update & Install Paket ===
 echo "📦 Memperbarui paket & menginstal dependency..."
 pkg update -y && pkg upgrade -y
-pkg install -y python openssh git
+pkg install -y python git wget
 
 # === Install Library Python ===
 echo "📚 Menginstal library Python..."
@@ -21,11 +21,15 @@ nohup python app.py > log.txt 2>&1 &
 sleep 3
 echo "✅ Flask server berjalan di background. Log disimpan di log.txt"
 
-# === Jalankan Serveo untuk akses publik ===
-SUBDOMAIN="aiadrian"
-echo "🌐 Membuka akses publik melalui Serveo..."
-echo "➡️  Link publik: https://$SUBDOMAIN.serveo.net"
+# === Setup Cloudflare Tunnel ===
+TUNNEL_NAME="myflask"
+CLOUDFLARED="./cloudflared"  # pastikan cloudflared ada di folder yang sama
+SUBDOMAIN="myflask.trycloudflare.com"
 
-# Jalankan koneksi Serveo
-# -R = remote forwarding, StrictHostKeyChecking=no agar tidak tanya fingerprint
-ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=60 -R $SUBDOMAIN:80:localhost:5000 serveo.net
+echo "🌐 Menjalankan Cloudflare Tunnel..."
+# Jalankan tunnel
+$CLOUDFLARED tunnel --config config.yml run $TUNNEL_NAME &
+
+sleep 3
+echo "✅ Cloudflare Tunnel berjalan."
+echo "➡️  Link publik permanen: https://$SUBDOMAIN"
