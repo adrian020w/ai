@@ -1,83 +1,52 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "🚀 Menyiapkan Orion AI (Flask + Cloudflare Tunnel)..."
+echo "🚀 Menyiapkan Orion AI (Flask) di Replit..."
 
 # =========================
 # Configurable
 # =========================
-WORKDIR="/root/cloudflare"
-TUNNEL_NAME="orionai"
-SUBDOMAIN="orionai.trycloudflare.com"
-TID="d4153116-9a7e-4f91-a06c-b5aac97809ba"
-
-CLOUDFLARED_BIN="/root/cloudflared/cloudflared"  # sesuaikan lokasi binary
-
-mkdir -p "$WORKDIR"
-mkdir -p "$HOME/.cloudflared"
+FLASK_APP="${FLASK_APP:-main.py}"   # pastikan main.py ada
+PYTHON_BIN="${PYTHON_BIN:-python3}"
+PORT="${PORT:-3000}"                # Replit otomatis set $PORT
 
 # =========================
 # Pastikan Flask app ada
 # =========================
-APP="$WORKDIR/app.py"
-if [ ! -f "$APP" ]; then
-cat > "$APP" <<PY
+if [ ! -f "$FLASK_APP" ]; then
+  cat > "$FLASK_APP" <<PY
 from flask import Flask
 app = Flask(__name__)
 
 @app.route('/')
 def home():
-    return "Halo! Orion AI (Flask) berjalan via Cloudflare Tunnel 😎"
+    return "Halo! Orion AI (Flask) berjalan di Replit 😎"
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000)
+    import os
+    port = int(os.environ.get("PORT", 3000))
+    app.run(host="0.0.0.0", port=port)
 PY
-    echo "✅ Contoh app.py dibuat."
+  echo "✅ Contoh main.py dibuat."
+else
+  echo "✅ Ditemukan Flask app: $FLASK_APP"
 fi
 
 # =========================
-# Jalankan Flask di background
+# Install requirements
 # =========================
-echo "🧠 Menjalankan Flask di background..."
-nohup python "$APP" > "$WORKDIR/log_flask.txt" 2>&1 &
+if [ -f "requirements.txt" ]; then
+  echo "📦 Menginstall requirements..."
+  $PYTHON_BIN -m pip install -r requirements.txt
+fi
+
+# =========================
+# Jalankan Flask
+# =========================
+echo "🧠 Menjalankan Flask di port $PORT..."
+nohup $PYTHON_BIN "$FLASK_APP" > log_flask.txt 2>&1 &
+
 sleep 2
-echo "✅ Flask dijalankan. Log: $WORKDIR/log_flask.txt"
-
-# =========================
-# Buat config.yml untuk tunnel
-# =========================
-CONFIG_FILE="$WORKDIR/config.yml"
-cat > "$CONFIG_FILE" <<YML
-tunnel: $TID
-credentials-file: $HOME/.cloudflared/$TID.json
-
-ingress:
-  - hostname: $SUBDOMAIN
-    service: http://localhost:5000
-  - service: http_status:404
-YML
-echo "✅ config.yml dibuat di $CONFIG_FILE"
-
-# =========================
-# Cek credentials JSON
-# =========================
-CREDS_FILE="$HOME/.cloudflared/$TID.json"
-if [ ! -f "$CREDS_FILE" ]; then
-    echo "❌ File credentials JSON tidak ditemukan: $CREDS_FILE"
-    echo "Pastikan sudah menjalankan cloudflared login & tunnel create $TID"
-    exit 1
-fi
-echo "✅ File credentials JSON ditemukan: $CREDS_FILE"
-
-# =========================
-# Jalankan tunnel
-# =========================
-echo "🌐 Menjalankan Cloudflare Tunnel..."
-nohup "$CLOUDFLARED_BIN" tunnel --config "$CONFIG_FILE" run "$TUNNEL_NAME" > "$WORKDIR/log_cloudflared.txt" 2>&1 &
-sleep 4
-
-echo "✅ Tunnel dijalankan. Log: $WORKDIR/log_cloudflared.txt"
-echo ""
-echo "🔗 Akses Orion AI via: https://$SUBDOMAIN"
-echo "📝 Cek log Flask: tail -f $WORKDIR/log_flask.txt"
-echo "📝 Cek log Tunnel: tail -f $WORKDIR/log_cloudflared.txt"
+echo "✅ Flask dijalankan. Log: log_flask.txt"
+echo "🔗 Akses Orion AI via: https://$REPL_SLUG.$REPL_OWNER.repl.co (otomatis Replit)"
+echo "📝 Cek log Flask: tail -f log_flask.txt"
