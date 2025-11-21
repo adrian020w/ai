@@ -4,10 +4,17 @@ import re
 
 app = Flask(__name__)
 
-# ⚠️ GANTI DENGAN API KEY ANDA DI SINI
+# ==========================================
+# ⚠️ KONFIGURASI API KEY
+# ==========================================
 API_KEY = "AIzaSyD1tV5Zav3lH3_doWRauEnQ2cQmleR8c5k"
+
+# Menggunakan Model Gemini 2.0 Flash
 AI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
+# ==========================================
+# 🎨 FRONTEND (DESAIN ORION AI FINAL)
+# ==========================================
 html = """<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -15,13 +22,15 @@ html = """<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>🌌 Orion AI by Adrian</title>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 
 <style>
-/* --- GAYA ASLI --- */
+/* --- GAYA DASAR --- */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  height: 100vh; overflow: hidden; background: #0f172a;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  height: 100vh; overflow: hidden; background: #0f172a; color: #e2e8f0;
 }
 
 /* Sidebar Styling */
@@ -30,7 +39,7 @@ body {
   background: rgba(30, 41, 59, 0.85);
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   border-right: 1px solid rgba(148, 163, 184, 0.1);
-  color: #e2e8f0; display: flex; flex-direction: column;
+  display: flex; flex-direction: column;
   transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000;
   box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
 }
@@ -41,7 +50,6 @@ body {
   background: linear-gradient(135deg, #38bdf8, #a855f7, #facc15);
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   font-weight: 700; letter-spacing: 0.5px;
-  filter: drop-shadow(0 2px 8px rgba(168, 85, 247, 0.3));
 }
 
 .sidebar button {
@@ -56,16 +64,6 @@ body {
 .sidebar button:hover {
   background: rgba(59, 130, 246, 0.9); transform: translateX(4px) scale(1.02);
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4); border-color: rgba(59, 130, 246, 0.6);
-}
-.sidebar button:active { transform: translateX(4px) scale(0.98); }
-
-.sidebar #newChat {
-  background: rgba(6, 182, 212, 0.8); border-color: rgba(6, 182, 212, 0.3);
-  font-weight: 600; text-align: center;
-}
-.sidebar #newChat:hover {
-  background: rgba(6, 182, 212, 1); box-shadow: 0 4px 16px rgba(6, 182, 212, 0.5);
-  border-color: rgba(6, 182, 212, 0.6);
 }
 
 #historyList { flex-grow: 1; overflow-y: auto; margin-top: 8px; padding-right: 4px; }
@@ -89,7 +87,7 @@ body {
 }
 
 .chat-box {
-  flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px;
+  flex-grow: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 15px;
 }
 .chat-box::-webkit-scrollbar { width: 8px; }
 .chat-box::-webkit-scrollbar-track { background: rgba(30, 41, 59, 0.3); }
@@ -97,8 +95,8 @@ body {
 
 /* Message Styling */
 .msg {
-  padding: 14px 18px; border-radius: 16px; max-width: 75%; word-wrap: break-word;
-  line-height: 1.6; font-size: 0.95rem;
+  padding: 14px 18px; border-radius: 16px; max-width: 80%; word-wrap: break-word;
+  line-height: 1.6; font-size: 0.95rem; position: relative;
   animation: messageSlide 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -108,7 +106,19 @@ body {
 .msg p:last-child { margin-bottom: 0; }
 .msg ul, .msg ol { margin-left: 20px; margin-bottom: 10px; }
 .msg li { margin-bottom: 5px; }
-.msg strong { font-weight: 700; color: #fff; } /* Huruf tebal lebih terang */
+.msg strong { font-weight: 700; color: #fff; }
+.msg pre { margin: 10px 0; padding: 12px; background: #1e1e1e; border-radius: 8px; overflow-x: auto; }
+.msg code { font-family: 'Consolas', monospace; font-size: 0.9em; }
+
+/* Tombol Salin */
+.copy-btn {
+    position: absolute; top: 5px; right: 5px;
+    background: rgba(255,255,255,0.1); border: none; color: #cbd5e1;
+    padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; cursor: pointer;
+    transition: 0.2s; display: none;
+}
+.msg:hover .copy-btn { display: block; }
+.copy-btn:hover { background: rgba(255,255,255,0.2); color: white; }
 
 @keyframes messageSlide { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -157,7 +167,7 @@ button.send:hover {
 button.send:active { transform: translateY(0); box-shadow: 0 2px 8px rgba(6, 182, 212, 0.4); }
 audio { display: none; }
 
-/* Layar Sambutan (Empty State) */
+/* Layar Sambutan */
 .empty-state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   height: 100%; text-align: center; animation: fadeIn 0.5s ease; color: #e2e8f0;
@@ -236,44 +246,59 @@ if(!chats[currentChatId]) chats[currentChatId] = [];
 
 function saveChats(){ localStorage.setItem('chats', JSON.stringify(chats)); }
 
-// UPDATED: Fungsi ini sekarang menggunakan library marked untuk menghapus tanda *
-function formatText(text){
-    // Parse markdown menjadi HTML
-    return marked.parse(text);
-}
-
-window.fillInput = (text) => {
-    input.value = text; input.focus();
+// Fungsi Copy Text
+function copyText(text, btn) {
+    navigator.clipboard.writeText(text).then(() => {
+        const originalText = btn.innerText;
+        btn.innerText = "Tersalin";
+        setTimeout(() => { btn.innerText = originalText; }, 1500);
+    });
 }
 
 function renderChat(){
     chat.innerHTML = '';
     
-    // Logika Layar Sambutan
     if(!chats[currentChatId] || chats[currentChatId].length === 0){
         chat.innerHTML = `
             <div class="empty-state">
-                <h1>Halo, Adrian! 👋</h1>
+                <h1>Halo, Adrian!</h1>
                 <p>Saya Orion AI. Ada yang bisa saya bantu kerjakan hari ini?</p>
                 <div class="suggestion-chips">
-                    <div class="chip" onclick="fillInput('Carikan berita terbaru hari ini di Indonesia')">📰 Berita Hari Ini</div>
-                    <div class="chip" onclick="fillInput('Buatkan ide konten Instagram tentang teknologi')">💡 Ide Konten IG</div>
-                    <div class="chip" onclick="fillInput('Jelaskan secara singkat apa itu AI')">🤖 Apa itu AI?</div>
+                    <div class="chip" onclick="fillInput('Carikan berita terbaru hari ini di Indonesia')">Berita Hari Ini</div>
+                    <div class="chip" onclick="fillInput('Buatkan ide konten Instagram tentang teknologi')">Ide Konten IG</div>
+                    <div class="chip" onclick="fillInput('Jelaskan secara singkat apa itu AI')">Apa itu AI?</div>
                 </div>
             </div>
         `;
         return;
     }
 
-    if(chats[currentChatId]){
-        for(const msg of chats[currentChatId]){
-            const div=document.createElement('div');
-            div.className='msg '+msg.sender;
-            div.innerHTML=formatText(msg.text); // Disini teks diformat
-            chat.appendChild(div);
+    for(const msg of chats[currentChatId]){
+        const div = document.createElement('div');
+        div.className = 'msg ' + msg.sender;
+        
+        // Parse Markdown
+        let content = marked.parse(msg.text);
+        div.innerHTML = content;
+
+        // Tambahkan Tombol Salin jika itu pesan AI
+        if(msg.sender === 'ai'){
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'copy-btn';
+            copyBtn.innerText = 'Salin';
+            copyBtn.onclick = () => copyText(msg.text, copyBtn);
+            div.appendChild(copyBtn);
         }
+
+        chat.appendChild(div);
     }
-    chat.scrollTop=chat.scrollHeight;
+    
+    // Syntax Highlighting
+    document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightElement(block);
+    });
+    
+    chat.scrollTop = chat.scrollHeight;
 }
 
 function renderHistory(){
@@ -294,6 +319,10 @@ function renderHistory(){
         btn.onclick=()=>{ currentChatId=id; renderChat(); };
         historyList.appendChild(btn);
     });
+}
+
+window.fillInput = (text) => {
+    input.value = text; input.focus();
 }
 
 newChatBtn.onclick = ()=>{
@@ -325,7 +354,7 @@ form.addEventListener('submit',async e=>{
     renderHistory();
     
     input.value='';
-    const loader={sender:'ai', text:'...'};
+    const loader={sender:'ai', text:'_Sedang mengetik..._'};
     chats[currentChatId].push(loader);
     renderChat();
 
@@ -334,7 +363,7 @@ form.addEventListener('submit',async e=>{
     });
     const data = await res.json();
     chats[currentChatId].pop();
-    chats[currentChatId].push({sender:'ai', text:data.answer||'⚠️ Terjadi kesalahan.'});
+    chats[currentChatId].push({sender:'ai', text:data.answer||'Terjadi kesalahan.'});
     saveChats();
     renderChat();
 });
@@ -355,11 +384,11 @@ def get_latest_news(query):
         items = re.findall(r"<title>(.*?)</title><link>(.*?)</link>", r.text)
         if len(items)>1:
             news=[]
-            for title,link in items[1:5]: news.append(f"📰 {title}\\n🔗 {link}")
-            return "\\n\\n".join(news)
+            for title,link in items[1:5]: news.append(f"📰 {title}\n🔗 {link}")
+            return "\n\n".join(news)
         return "Tidak ada berita terbaru ditemukan."
     except Exception as e:
-        return f"❌ Gagal ambil berita: {str(e)}"
+        return f"Gagal ambil berita: {str(e)}"
 
 @app.route("/")
 def home(): return render_template_string(html)
@@ -376,14 +405,19 @@ def ask():
         
         payload={"contents":[{"parts":[{"text":f"{question}"}]}]}
         response=requests.post(AI_URL,json=payload)
+        
+        # ⚠️ PENANGANAN LIMIT KUOTA (429) ⚠️
+        if response.status_code == 429:
+             return jsonify({"answer": "⚠️ Maaf Bang , kuota gratis hari ini sudah habis. Mohon tunggu beberapa saat atau coba lagi besok ya! 🙏"})
+             
         data=response.json()
         if "candidates" in data:
              answer = data["candidates"][0]["content"]["parts"][0]["text"]
         else:
-             answer = "Maaf, saya sedang mengalami gangguan koneksi ke otak saya."
+             answer = "Maaf, saya sedang mengalami gangguan koneksi."
         return jsonify({"answer": answer})
     except Exception as e:
-        return jsonify({"answer":f"❌ Error: {str(e)}"})
+        return jsonify({"answer":f"Error: {str(e)}"})
 
 if __name__=="__main__":
     app.run(host="0.0.0.0", port=5000)
