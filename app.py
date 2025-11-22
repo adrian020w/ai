@@ -10,10 +10,10 @@ app = Flask(__name__)
 API_KEY = "AIzaSyCH1myR7PH_mJM_Xo94otL_31eYUoXkh0s"
 AI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={API_KEY}"
 
-SYSTEM_PROMPT = "Kamu adalah Orion AI. Jawab dengan gaya santai, jelas, dan membantu."
+SYSTEM_PROMPT = "Kamu adalah Orion AI. Jawab singkat, jelas, dan membantu."
 
 # ==========================================
-# 🎨 FRONTEND (LAYOUT FIX + TAP EDGE)
+# 🎨 FRONTEND (INVISIBLE SIDEBAR + CHIPS)
 # ==========================================
 html = """<!DOCTYPE html>
 <html lang="id">
@@ -33,88 +33,66 @@ html = """<!DOCTYPE html>
 
 body {
   font-family: 'Poppins', sans-serif;
-  /* FIX: Pakai 100dvh biar pas di layar HP (ga ketutup browser bar) */
-  height: 100dvh; 
+  height: 100dvh; /* Full layar HP */
   width: 100%;
   overflow: hidden; 
   background: #0f172a; color: #e2e8f0;
   display: flex;
 }
 
-/* --- SIDEBAR (LOGIKA TAP EDGE) --- */
+/* --- SIDEBAR (INVISIBLE TOUCH AREA) --- */
 .sidebar {
   position: fixed; left: 0; top: 0; bottom: 0;
-  background: #1e293b;
-  z-index: 1000;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border-right: 1px solid #334155;
-  overflow: hidden;
+  z-index: 2000;
   
-  /* PENTING: Area klik di HP diperlebar sedikit jadi 25px biar gampang dipencet */
-  width: 25px; 
-  border-right: 2px solid #3b82f6; /* Garis neon */
-  box-shadow: 5px 0 15px rgba(59, 130, 246, 0.3);
+  /* Area sentuh transparan selebar 30px di kiri */
+  width: 30px; 
+  background: transparent; 
+  border: none; 
   cursor: pointer;
+  
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+  overflow: hidden;
+}
+
+/* Saat Menu Terbuka */
+.sidebar.active {
+  width: 85%; 
+  max-width: 300px;
+  background: #1e293b; 
+  box-shadow: 10px 0 50px rgba(0,0,0,0.8);
+  border-right: 1px solid #334155;
 }
 
 .sidebar-content {
   width: 280px; height: 100%; padding: 20px;
   display: flex; flex-direction: column;
   opacity: 0; transition: opacity 0.2s;
-  white-space: nowrap;
+  min-width: 280px; 
 }
+.sidebar.active .sidebar-content { opacity: 1; transition-delay: 0.1s; }
 
-/* --- RESPONSIVE LOGIC --- */
-/* DESKTOP: Hover Effect */
+/* Desktop Mode */
 @media (min-width: 769px) {
-  .sidebar { width: 15px; }
-  .sidebar:hover { width: 300px; background: rgba(30, 41, 59, 0.95); }
+  .sidebar { width: 10px; }
+  .sidebar:hover { width: 300px; background: #1e293b; }
   .sidebar:hover .sidebar-content { opacity: 1; }
 }
 
-/* MOBILE: Tap Logic */
-@media (max-width: 768px) {
-  .sidebar.active { 
-    width: 85%; max-width: 300px;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
-  }
-  .sidebar.active .sidebar-content { opacity: 1; }
-  
-  .overlay {
-    position: fixed; top:0; left:0; right:0; bottom:0;
-    background: rgba(0,0,0,0.6); z-index: 900;
-    display: none; backdrop-filter: blur(2px);
-  }
-  .overlay.active { display: block; }
+/* Overlay */
+.overlay {
+  position: fixed; top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.8); z-index: 1500;
+  display: none; backdrop-filter: blur(3px);
 }
+.overlay.active { display: block; }
 
-/* --- COMPONENT --- */
-.sidebar h2 {
-  text-align: center; margin-bottom: 20px; font-size: 1.8rem; font-weight: 700;
-  background: linear-gradient(to right, #60a5fa, #c084fc);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-
-#newChat {
-  background: linear-gradient(90deg, #2563eb, #4f46e5);
-  color: white; border: none; padding: 12px; border-radius: 10px;
-  font-weight: 600; cursor: pointer; margin-bottom: 15px;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
-}
-
-#historyList { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.history-btn {
-  background: transparent; color: #cbd5e1; border: 1px solid #334155; 
-  padding: 12px; border-radius: 8px; text-align: left; cursor: pointer; 
-  font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis;
-}
 
 /* --- CHAT AREA --- */
 .chat-container {
   flex-grow: 1; display: flex; flex-direction: column;
-  background: #0f172a; width: 100%;
-  padding-left: 25px; /* Geser dikit sesuaikan lebar sidebar */
-  height: 100dvh; /* Full tinggi layar */
+  background: #0f172a; width: 100%; height: 100dvh;
+  padding-left: 10px; 
 }
 
 .chat-box {
@@ -129,93 +107,111 @@ body {
 .user { align-self: flex-end; background: #2563eb; color: white; border-bottom-right-radius: 2px; }
 .ai { align-self: flex-start; background: #1e293b; border: 1px solid #334155; border-bottom-left-radius: 2px; }
 
-/* --- INPUT AREA (FIX POSISI) --- */
-form {
-  padding: 15px; 
-  background: #1e293b; 
-  border-top: 1px solid #334155;
-  display: flex; gap: 10px; align-items: center;
-  flex-shrink: 0; /* Jangan menyusut */
-  
-  /* FIX: Tambah jarak aman di bawah buat HP (safe area) */
-  padding-bottom: max(15px, env(safe-area-inset-bottom)); 
-}
 
+/* --- INPUT FORM --- */
+form {
+  padding: 15px; background: #1e293b; border-top: 1px solid #334155;
+  display: flex; gap: 10px; align-items: center; flex-shrink: 0;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+}
 textarea {
   flex-grow: 1; background: #0f172a; border: 1px solid #334155;
   border-radius: 20px; padding: 12px 15px; color: white; outline: none;
-  font-family: inherit; resize: none; height: 50px; font-size: 16px; /* Font 16px biar ga zoom di iPhone */
+  font-family: inherit; resize: none; height: 50px; font-size: 16px;
 }
-textarea:focus { border-color: #3b82f6; }
-
+textarea:focus { border-color: #38bdf8; }
 button.send {
   height: 50px; width: 50px; border-radius: 50%; border: none;
   background: #06b6d4; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
-button.send svg { width: 20px; fill: white; }
 
-.code-wrapper { background: #0d1117; border: 1px solid #334155; border-radius: 8px; margin: 10px 0; overflow: hidden; }
-.code-header { background: #161b22; padding: 5px 10px; color: #8b949e; font-size: 0.7rem; display: flex; justify-content: space-between; }
+/* --- COMPONENTS & CHIPS --- */
+.sidebar h2 {
+  text-align: center; margin-bottom: 20px; font-size: 1.8rem; font-weight: 700;
+  background: linear-gradient(to right, #60a5fa, #c084fc);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+#newChat {
+  background: linear-gradient(90deg, #2563eb, #4f46e5);
+  color: white; border: none; padding: 12px; border-radius: 10px;
+  font-weight: 600; cursor: pointer; margin-bottom: 15px;
+  display: flex; align-items: center; gap:10px;
+}
+#historyList { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.history-btn {
+  background: transparent; color: #cbd5e1; border: 1px solid #334155; 
+  padding: 12px; border-radius: 8px; text-align: left; cursor: pointer; 
+  font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis;
+}
+.code-wrapper { background: #0d1117; border-radius: 8px; margin: 10px 0; border: 1px solid #334155; overflow: hidden; }
+.code-header { padding: 5px 10px; background: #161b22; color: #8b949e; font-size: 0.7rem; display: flex; justify-content: space-between; }
 .code-wrapper pre { padding: 10px; overflow-x: auto; }
 
-.welcome-screen { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-.welcome-screen h1 { font-size: 2rem; background: linear-gradient(to right, #38bdf8, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
-.chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
-.chip { background: #1e293b; border: 1px solid #334155; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; }
+/* STYLE LAYAR SAMBUTAN (Updated) */
+.welcome-screen { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; }
+.welcome-screen h1 { font-size: 2rem; background: linear-gradient(to right, #38bdf8, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 5px; }
+.welcome-screen p { color: #94a3b8; font-size: 0.9rem; margin-bottom: 30px; }
+
+/* STYLE SUGGESTION CHIPS */
+.chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; width: 100%; }
+.chip {
+  background: #1e293b; border: 1px solid #334155; padding: 10px 20px;
+  border-radius: 25px; color: #cbd5e1; cursor: pointer; transition: 0.2s;
+  font-size: 0.85rem;
+}
+.chip:hover { border-color: #38bdf8; background: #334155; color: white; transform: translateY(-2px); }
+
 </style>
 </head>
 <body>
 
-<div class="overlay" onclick="closeMenu()"></div>
+<div class="overlay" id="overlay" onclick="tutupMenu()"></div>
 
-<div class="sidebar" id="sidebar" onclick="openMenu()">
+<div class="sidebar" id="sidebar" onclick="bukaMenu()">
   <div class="sidebar-content">
     <h2>Orion AI</h2>
     <button id="newChat"><span>+</span> Chat Baru</button>
     <div id="historyList"></div>
-    <div style="margin-top:auto; font-size:0.7rem; color:#64748b; text-align:center">By Adrian</div>
+    <div style="margin-top:auto; text-align:center; font-size:0.7rem; color:#64748b;">By Adrian</div>
   </div>
 </div>
 
 <div class="chat-container">
   <div id="chat" class="chat-box">
     <div class="welcome-screen" id="welcome">
-        <h1>Halo, kamu!</h1>
-        <p>Ada yang bisa saya bantu?</p>
+        <h1>Halo, Adrian!</h1>
+        <p>Ada yang bisa Orion bantu?</p>
+        
         <div class="chips">
-            <div class="chip" onclick="isi('Ide Caption IG')">📸 Sosmed</div>
-            <div class="chip" onclick="isi('Buatkan HTML Landing Page')">💻 Coding</div>
-            <div class="chip" onclick="isi('Ceritakan lelucon lucu')">😂 Hiburan</div>
+            <div class="chip" onclick="isi('Berita hari ini')">📰 Berita</div>
+            <div class="chip" onclick="isi('Buatkan kodingan HTML')">💻 Coding</div>
+            <div class="chip" onclick="isi('Ide konten Instagram')">📸 Sosmed</div>
+            <div class="chip" onclick="isi('Jelaskan apa itu AI')">🤖 Info AI</div>
         </div>
     </div>
   </div>
 
   <form id="form">
     <textarea id="task" placeholder="Ketik pesan..." rows="1"></textarea>
-    <button type="submit" class="send">
-        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-    </button>
+    <button type="submit" class="send">➤</button>
   </form>
 </div>
 
 <script>
-// --- LOGIC MENU HP ---
 const sidebar = document.getElementById('sidebar');
-const overlay = document.querySelector('.overlay');
+const overlay = document.getElementById('overlay');
 
-function openMenu() {
-    if (window.innerWidth <= 768) {
+function bukaMenu() {
+    if (!sidebar.classList.contains('active')) {
         sidebar.classList.add('active');
         overlay.classList.add('active');
     }
 }
-function closeMenu() {
+function tutupMenu() {
     sidebar.classList.remove('active');
     overlay.classList.remove('active');
 }
-document.querySelector('.sidebar-content').addEventListener('click', function(e) {
-    e.stopPropagation(); 
-});
+document.querySelector('.sidebar-content').addEventListener('click', function(e) { e.stopPropagation(); });
 
 // --- CHAT ENGINE ---
 const renderer = new marked.Renderer();
@@ -232,10 +228,10 @@ const historyList = document.getElementById('historyList');
 const welcomeScreen = document.getElementById('welcome');
 
 let currentChatId = Date.now();
-let chats = JSON.parse(localStorage.getItem('chats_v5')||'{}');
+let chats = JSON.parse(localStorage.getItem('chats_v10')||'{}');
 if(!chats[currentChatId]) chats[currentChatId]=[];
 
-function saveChats(){ localStorage.setItem('chats_v5', JSON.stringify(chats)); }
+function saveChats(){ localStorage.setItem('chats_v10', JSON.stringify(chats)); }
 function isi(teks) { input.value = teks; input.focus(); }
 
 function renderChat(){
@@ -260,9 +256,9 @@ function renderHistory(){
         const btn = document.createElement('button');
         btn.className = 'history-btn'; btn.innerText = txt;
         btn.onclick = (e) => { 
-            e.stopPropagation(); 
+            e.stopPropagation();
             currentChatId = id; renderChat(); 
-            if(window.innerWidth <= 768) closeMenu();
+            if(window.innerWidth <= 768) tutupMenu();
         };
         historyList.appendChild(btn);
     });
@@ -271,7 +267,7 @@ function renderHistory(){
 document.getElementById('newChat').onclick = (e) => {
     e.stopPropagation();
     currentChatId = Date.now(); chats[currentChatId] = []; saveChats(); renderChat(); renderHistory();
-    if(window.innerWidth <= 768) closeMenu();
+    if(window.innerWidth <= 768) tutupMenu();
 };
 
 document.getElementById('form').addEventListener('submit', async e => {
@@ -281,7 +277,7 @@ document.getElementById('form').addEventListener('submit', async e => {
     chats[currentChatId].push({sender:'user', text:q});
     saveChats(); renderChat(); renderHistory(); input.value='';
     
-    chats[currentChatId].push({sender:'ai', text:'_Sedang mengetik..._'}); renderChat();
+    chats[currentChatId].push({sender:'ai', text:'_..._'}); renderChat();
 
     try {
         const res = await fetch('/ask', {
@@ -291,7 +287,7 @@ document.getElementById('form').addEventListener('submit', async e => {
         chats[currentChatId].pop(); chats[currentChatId].push({sender:'ai', text: data.answer});
         saveChats(); renderChat();
     } catch(err) {
-        chats[currentChatId].pop(); chats[currentChatId].push({sender:'ai', text: "Error: "+err}); renderChat();
+        chats[currentChatId].pop(); chats[currentChatId].push({sender:'ai', text: "Error."}); renderChat();
     }
 });
 
@@ -311,7 +307,7 @@ def ask():
     try:
         r = requests.post(AI_URL, json=payload)
         return jsonify({"answer": r.json()["candidates"][0]["content"]["parts"][0]["text"]})
-    except: return jsonify({"answer": "Maaf, ada error."})
+    except: return jsonify({"answer": "Maaf, error."})
 
 if __name__=="__main__":
     app.run(host="0.0.0.0", port=5000)
