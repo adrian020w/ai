@@ -179,7 +179,7 @@ button.send {
 <div class="chat-container">
   <div id="chat" class="chat-box">
     <div class="welcome-screen" id="welcome">
-        <h1>Halo, Adrian!</h1>
+        <h1>Halo, Kamu!</h1>
         <p>Ada yang bisa Orion bantu?</p>
         
         <div class="chips">
