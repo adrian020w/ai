@@ -13,13 +13,13 @@ AI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-fl
 SYSTEM_PROMPT = "Kamu adalah Orion AI. Jawab dengan gaya santai, jelas, dan membantu."
 
 # ==========================================
-# 🎨 FRONTEND (TAP EDGE NAVIGATION)
+# 🎨 FRONTEND (LAYOUT FIX + TAP EDGE)
 # ==========================================
 html = """<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>🌌 Orion AI by Adrian</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -30,9 +30,13 @@ html = """<!DOCTYPE html>
 <style>
 /* --- RESET --- */
 * { margin: 0; padding: 0; box-sizing: border-box; }
+
 body {
   font-family: 'Poppins', sans-serif;
-  height: 100vh; overflow: hidden; 
+  /* FIX: Pakai 100dvh biar pas di layar HP (ga ketutup browser bar) */
+  height: 100dvh; 
+  width: 100%;
+  overflow: hidden; 
   background: #0f172a; color: #e2e8f0;
   display: flex;
 }
@@ -46,44 +50,36 @@ body {
   border-right: 1px solid #334155;
   overflow: hidden;
   
-  /* PENTING: Garis pancingan warna neon */
-  border-right: 2px solid #3b82f6;
+  /* PENTING: Area klik di HP diperlebar sedikit jadi 25px biar gampang dipencet */
+  width: 25px; 
+  border-right: 2px solid #3b82f6; /* Garis neon */
   box-shadow: 5px 0 15px rgba(59, 130, 246, 0.3);
+  cursor: pointer;
 }
 
 .sidebar-content {
   width: 280px; height: 100%; padding: 20px;
   display: flex; flex-direction: column;
   opacity: 0; transition: opacity 0.2s;
-  white-space: nowrap; /* Biar teks ga hancur pas sempit */
+  white-space: nowrap;
 }
 
 /* --- RESPONSIVE LOGIC --- */
-
 /* DESKTOP: Hover Effect */
 @media (min-width: 769px) {
-  .sidebar { width: 15px; cursor: pointer; }
+  .sidebar { width: 15px; }
   .sidebar:hover { width: 300px; background: rgba(30, 41, 59, 0.95); }
   .sidebar:hover .sidebar-content { opacity: 1; }
 }
 
-/* MOBILE: Tap Edge Effect */
+/* MOBILE: Tap Logic */
 @media (max-width: 768px) {
-  .sidebar { 
-    width: 20px; /* Lebar pancingan di HP */
-    cursor: pointer;
-  }
-  
-  /* Class .active ditambahkan via JS saat diklik */
   .sidebar.active { 
-    width: 85%; /* Lebar menu saat terbuka */
-    max-width: 300px;
+    width: 85%; max-width: 300px;
     box-shadow: 10px 0 30px rgba(0,0,0,0.5);
   }
-  
   .sidebar.active .sidebar-content { opacity: 1; }
   
-  /* Overlay Gelap (Hanya muncul pas menu buka) */
   .overlay {
     position: fixed; top:0; left:0; right:0; bottom:0;
     background: rgba(0,0,0,0.6); z-index: 900;
@@ -92,7 +88,7 @@ body {
   .overlay.active { display: block; }
 }
 
-/* --- JUDUL & KOMPONEN SIDEBAR --- */
+/* --- COMPONENT --- */
 .sidebar h2 {
   text-align: center; margin-bottom: 20px; font-size: 1.8rem; font-weight: 700;
   background: linear-gradient(to right, #60a5fa, #c084fc);
@@ -112,17 +108,17 @@ body {
   padding: 12px; border-radius: 8px; text-align: left; cursor: pointer; 
   font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis;
 }
-.history-btn:hover { background: #334155; color: white; }
 
 /* --- CHAT AREA --- */
 .chat-container {
   flex-grow: 1; display: flex; flex-direction: column;
   background: #0f172a; width: 100%;
-  padding-left: 20px; /* Kasih jarak dikit biar ga ketutup garis sidebar */
+  padding-left: 25px; /* Geser dikit sesuaikan lebar sidebar */
+  height: 100dvh; /* Full tinggi layar */
 }
 
 .chat-box {
-  flex-grow: 1; overflow-y: auto; padding: 30px 20px;
+  flex-grow: 1; overflow-y: auto; padding: 20px;
   display: flex; flex-direction: column; gap: 20px; scroll-behavior: smooth;
 }
 
@@ -133,33 +129,39 @@ body {
 .user { align-self: flex-end; background: #2563eb; color: white; border-bottom-right-radius: 2px; }
 .ai { align-self: flex-start; background: #1e293b; border: 1px solid #334155; border-bottom-left-radius: 2px; }
 
-/* INPUT AREA */
+/* --- INPUT AREA (FIX POSISI) --- */
 form {
-  padding: 15px; background: #1e293b; border-top: 1px solid #334155;
+  padding: 15px; 
+  background: #1e293b; 
+  border-top: 1px solid #334155;
   display: flex; gap: 10px; align-items: center;
+  flex-shrink: 0; /* Jangan menyusut */
+  
+  /* FIX: Tambah jarak aman di bawah buat HP (safe area) */
+  padding-bottom: max(15px, env(safe-area-inset-bottom)); 
 }
+
 textarea {
   flex-grow: 1; background: #0f172a; border: 1px solid #334155;
   border-radius: 20px; padding: 12px 15px; color: white; outline: none;
-  font-family: inherit; resize: none; height: 50px;
+  font-family: inherit; resize: none; height: 50px; font-size: 16px; /* Font 16px biar ga zoom di iPhone */
 }
+textarea:focus { border-color: #3b82f6; }
+
 button.send {
   height: 50px; width: 50px; border-radius: 50%; border: none;
   background: #06b6d4; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 button.send svg { width: 20px; fill: white; }
 
-/* Code Block */
 .code-wrapper { background: #0d1117; border: 1px solid #334155; border-radius: 8px; margin: 10px 0; overflow: hidden; }
 .code-header { background: #161b22; padding: 5px 10px; color: #8b949e; font-size: 0.7rem; display: flex; justify-content: space-between; }
 .code-wrapper pre { padding: 10px; overflow-x: auto; }
 
-/* Welcome Screen */
 .welcome-screen { height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
 .welcome-screen h1 { font-size: 2rem; background: linear-gradient(to right, #38bdf8, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
 .chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; }
 .chip { background: #1e293b; border: 1px solid #334155; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; }
-
 </style>
 </head>
 <body>
@@ -178,7 +180,7 @@ button.send svg { width: 20px; fill: white; }
 <div class="chat-container">
   <div id="chat" class="chat-box">
     <div class="welcome-screen" id="welcome">
-        <h1>Halo, Adrian!</h1>
+        <h1>Halo, kamu!</h1>
         <p>Ada yang bisa saya bantu?</p>
         <div class="chips">
             <div class="chip" onclick="isi('Ide Caption IG')">📸 Sosmed</div>
@@ -197,30 +199,25 @@ button.send svg { width: 20px; fill: white; }
 </div>
 
 <script>
-// --- LOGIC MENU HP (KLIK PINGGIR) ---
+// --- LOGIC MENU HP ---
 const sidebar = document.getElementById('sidebar');
 const overlay = document.querySelector('.overlay');
 
 function openMenu() {
-    // Hanya jalan di HP
     if (window.innerWidth <= 768) {
         sidebar.classList.add('active');
         overlay.classList.add('active');
     }
 }
-
 function closeMenu() {
     sidebar.classList.remove('active');
     overlay.classList.remove('active');
 }
-
-// Agar tombol di dalam sidebar (seperti New Chat) berfungsi dan tidak bentrok
 document.querySelector('.sidebar-content').addEventListener('click', function(e) {
-    // Jangan trigger openMenu lagi, tapi biarkan event tombol jalan
     e.stopPropagation(); 
 });
 
-// --- SYSTEM CHAT ---
+// --- CHAT ENGINE ---
 const renderer = new marked.Renderer();
 renderer.code = function(code, language) {
   const validLang = !!(language && hljs.getLanguage(language)) ? language : 'plaintext';
@@ -235,10 +232,10 @@ const historyList = document.getElementById('historyList');
 const welcomeScreen = document.getElementById('welcome');
 
 let currentChatId = Date.now();
-let chats = JSON.parse(localStorage.getItem('chats_v4')||'{}');
+let chats = JSON.parse(localStorage.getItem('chats_v5')||'{}');
 if(!chats[currentChatId]) chats[currentChatId]=[];
 
-function saveChats(){ localStorage.setItem('chats_v4', JSON.stringify(chats)); }
+function saveChats(){ localStorage.setItem('chats_v5', JSON.stringify(chats)); }
 function isi(teks) { input.value = teks; input.focus(); }
 
 function renderChat(){
@@ -263,9 +260,9 @@ function renderHistory(){
         const btn = document.createElement('button');
         btn.className = 'history-btn'; btn.innerText = txt;
         btn.onclick = (e) => { 
-            e.stopPropagation(); // Cegah sidebar error
+            e.stopPropagation(); 
             currentChatId = id; renderChat(); 
-            if(window.innerWidth <= 768) closeMenu(); // Tutup menu otomatis
+            if(window.innerWidth <= 768) closeMenu();
         };
         historyList.appendChild(btn);
     });
@@ -304,7 +301,6 @@ renderHistory();
 </html>
 """
 
-# BACKEND TETAP SAMA
 @app.route("/")
 def home(): return render_template_string(html)
 
